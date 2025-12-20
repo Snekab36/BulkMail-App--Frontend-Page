@@ -31,7 +31,7 @@ function App() {
     setStatus(true);
     try {
       const res = await axios.post(
-        "https://bulk-mail-app-backend-seven.vercel.app//sendemail",
+        "https://bulk-mail-app-backend-seven.vercel.app/sendemail",
         { subject, msg, emailList }
       );
       alert(res.data.success ? "Emails Sent!" : "Failed");
