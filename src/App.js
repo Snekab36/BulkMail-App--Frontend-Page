@@ -35,7 +35,7 @@ function App() {
     }
 
     setStatus(true);
-    axios.post(`${process.env.REACT_APP_API_URL}/sendemail`, {
+    axios.post(`${process.env.REACT_APP_API_URL}/api/sendemail`, {
 
         msg: msg,
         emailList: emailList,
