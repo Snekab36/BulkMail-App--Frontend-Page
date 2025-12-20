@@ -3,119 +3,85 @@ import axios from "axios";
 import * as XLSX from "xlsx";
 
 function App() {
+  const [subject, setSubject] = useState("");
   const [msg, setMsg] = useState("");
-  const [status, setStatus] = useState(false);
   const [emailList, setEmailList] = useState([]);
-
-  function handleMsg(e) {
-    setMsg(e.target.value);
-  }
+  const [status, setStatus] = useState(false);
 
   function handleFile(e) {
     const file = e.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function (event) {
-      const data = event.target.result;
-      const workbook = XLSX.read(data, { type: "binary" });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const rows = XLSX.utils.sheet_to_json(worksheet, { header: "A" });
-      const emails = rows.map((item) => item.A).filter(Boolean);
-      setEmailList(emails);
+    reader.onload = (event) => {
+      const workbook = XLSX.read(event.target.result, { type: "binary" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: "A" });
+      setEmailList(rows.map(r => r.A).filter(Boolean));
     };
     reader.readAsBinaryString(file);
   }
 
-  function send() {
-    if (!msg || emailList.length === 0) {
-      alert("Please enter message and upload email file");
+  async function sendEmails() {
+    if (!subject || !msg || emailList.length === 0) {
+      alert("All fields required");
       return;
     }
 
     setStatus(true);
-    axios.post(`${process.env.REACT_APP_API_URL}/api/sendemail`, {
-
-        msg: msg,
-        emailList: emailList,
-      })
-      .then((res) => {
-        alert(res.data ? "Emails sent successfully!" : "Failed to send emails");
-        setStatus(false);
-      })
-      .catch(() => setStatus(false));
+    try {
+      const res = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/sendemail`,
+        { subject, msg, emailList }
+      );
+      alert(res.data.success ? "Emails Sent!" : "Failed");
+    } catch {
+      alert("Server error");
+    }
+    setStatus(false);
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-6">
-      <div className="w-full max-w-4xl bg-slate-900/80 backdrop-blur rounded-2xl shadow-2xl p-8 space-y-8">
+    <div className="min-h-screen bg-slate-900 flex justify-center items-center p-6">
+      <div className="bg-slate-800 p-8 rounded-xl w-full max-w-3xl space-y-4">
 
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-white">BulkMail</h1>
-          <p className="text-slate-400 mt-2">
-            Send personalized bulk emails easily
-          </p>
-        </div>
+        <h1 className="text-3xl font-bold text-white text-center">
+          Bulk Mail Sender
+        </h1>
 
-        {/* Message Box */}
-        <div>
-          <label className="text-sm text-slate-300 mb-1 block">
-            Email Content
-          </label>
-          <textarea
-            value={msg}
-            onChange={handleMsg}
-            placeholder="Hi {{name}}, welcome to our service..."
-            className="w-full h-36 rounded-xl bg-slate-800 border border-slate-700 p-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
+        <input
+          placeholder="Email Subject"
+          value={subject}
+          onChange={e => setSubject(e.target.value)}
+          className="w-full p-3 rounded bg-slate-700 text-white"
+        />
 
-        {/* File Upload */}
-        <div className="border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-indigo-500 transition">
-          <p className="text-slate-300 text-sm">
-            Drag & drop your XLSX file here
-          </p>
-          <p className="text-xs text-slate-500 mt-1">or</p>
-          <input
-            type="file"
-            accept=".xlsx,.csv"
-            onChange={handleFile}
-            className="mt-3 text-sm text-slate-300 file:bg-slate-700 file:border-0 file:px-4 file:py-2 file:rounded-lg file:text-white hover:file:bg-slate-600"
-          />
-          <p className="text-xs text-slate-500 mt-2">
-            Supported formats: .xlsx, .csv
-          </p>
-        </div>
+        <textarea
+          placeholder="Email Body"
+          value={msg}
+          onChange={e => setMsg(e.target.value)}
+          className="w-full h-32 p-3 rounded bg-slate-700 text-white"
+        />
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-          <Stat title="Total Emails" value={emailList.length} />
-          <Stat title="Status" value={status ? "Sending..." : "Ready"} />
-          <Stat title="File" value={emailList.length ? "Loaded" : "Not uploaded"} />
-        </div>
+        <input
+          type="file"
+          accept=".xlsx,.csv"
+          onChange={handleFile}
+          className="text-white"
+        />
 
-        {/* Actions */}
-        <div className="flex justify-end">
-          <button
-            onClick={send}
-            disabled={status}
-            className="px-6 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition font-semibold text-white disabled:opacity-50"
-          >
-            {status ? "Sending..." : "Send Emails"}
-          </button>
-        </div>
+        <p className="text-slate-400">
+          Emails Loaded: {emailList.length}
+        </p>
+
+        <button
+          onClick={sendEmails}
+          disabled={status}
+          className="bg-indigo-600 hover:bg-indigo-500 w-full py-2 rounded text-white font-bold"
+        >
+          {status ? "Sending..." : "Send Emails"}
+        </button>
       </div>
-    </div>
-  );
-}
-
-function Stat({ title, value }) {
-  return (
-    <div className="bg-slate-800 rounded-xl p-4">
-      <p className="text-xs text-slate-400">{title}</p>
-      <p className="text-xl font-bold text-white mt-1">{value}</p>
     </div>
   );
 }
