@@ -31,7 +31,7 @@ function App() {
     setStatus(true);
     try {
       const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}/sendemail`,
+        "https://bulkmail-app-backend-production-d6e5.up.railway.app/sendemail",
         { subject, msg, emailList }
       );
       alert(res.data.success ? "Emails Sent!" : "Failed");
