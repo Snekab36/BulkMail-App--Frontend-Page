@@ -31,7 +31,7 @@ function App() {
     setStatus(true);
     try {
       const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/sendemail`,
+        `${process.env.REACT_APP_API_URL}/sendemail`,
         { subject, msg, emailList }
       );
       alert(res.data.success ? "Emails Sent!" : "Failed");
